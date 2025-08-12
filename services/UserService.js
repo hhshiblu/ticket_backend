@@ -56,6 +56,32 @@ class UserService {
     }
   }
 
+  async getUserStats(userId) {
+    try {
+      if (!userId) {
+        return {
+          success: false,
+          message: 'User ID is required'
+        };
+      }
+
+      const stats = await this.userQueries.getUserStats(userId);
+      
+      return {
+        success: true,
+        data: stats,
+        message: 'User stats fetched successfully'
+      };
+    } catch (error) {
+      console.error('UserService - getUserStats error:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch user stats',
+        error: error.message
+      };
+    }
+  }
+
   async createUser(userData) {
     try {
       // Validate required fields

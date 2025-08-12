@@ -148,14 +148,6 @@ class TicketController {
   async getTicketById(req, res) {
     try {
       const { id } = req.params;
-
-      if (!id) {
-        return res.status(400).json({
-          success: false,
-          message: "Ticket ID is required",
-        });
-      }
-
       const ticket = await this.ticketQueries.getTicketById(id);
 
       if (!ticket) {
@@ -186,6 +178,91 @@ class TicketController {
         message: "Internal server error",
         error: error.message,
       });
+    }
+  }
+
+  // Get user tickets
+  async getUserTickets(req, res) {
+    try {
+      const { userId } = req.params;
+      const tickets = await this.ticketQueries.getUserTickets(userId);
+
+      res.status(200).json({
+        success: true,
+        data: tickets,
+        message: "User tickets fetched successfully",
+      });
+    } catch (error) {
+      console.error("TicketController - getUserTickets error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
+
+  // Download ticket as PDF/Image
+  async downloadTicket(req, res) {
+    try {
+      const { id } = req.params;
+      const { format = 'pdf' } = req.query;
+      
+      const ticket = await this.ticketQueries.getTicketById(id);
+      
+      if (!ticket) {
+        return res.status(404).json({
+          success: false,
+          message: "Ticket not found",
+        });
+      }
+
+      // Generate ticket content
+      const ticketContent = await this.generateTicketContent(ticket, format);
+      
+      if (format === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=ticket-${id}.pdf`);
+      } else {
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `attachment; filename=ticket-${id}.png`);
+      }
+      
+      res.send(ticketContent);
+    } catch (error) {
+      console.error("TicketController - downloadTicket error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
+
+  // Generate ticket content (placeholder - you can implement actual PDF/Image generation)
+  async generateTicketContent(ticket, format) {
+    // This is a placeholder implementation
+    // In a real application, you would use libraries like:
+    // - PDF: puppeteer, jsPDF, or similar
+    // - Image: canvas, sharp, or similar
+    
+    const ticketData = {
+      ticketNumber: ticket.ticket_number,
+      eventTitle: ticket.event_title,
+      eventDate: ticket.event_date,
+      eventTime: ticket.start_time,
+      venue: ticket.location,
+      ticketType: ticket.ticket_type,
+      price: ticket.price,
+      qrCode: ticket.ticket_number // Use ticket number as QR code for now
+    };
+
+    if (format === 'pdf') {
+      // Return a simple text representation for now
+      return Buffer.from(JSON.stringify(ticketData, null, 2));
+    } else {
+      // Return a simple image representation for now
+      return Buffer.from('PNG placeholder');
     }
   }
 

@@ -13,6 +13,12 @@ router.get(
 // Get ticket by ID
 router.get("/:id", ticketController.getTicketById.bind(ticketController));
 
+// Download ticket as PDF/Image
+router.get("/:id/download", ticketController.downloadTicket.bind(ticketController));
+
+// Get user tickets
+router.get("/user/:userId", ticketController.getUserTickets.bind(ticketController));
+
 // Create new ticket for an event
 router.post(
   "/event/:eventId",

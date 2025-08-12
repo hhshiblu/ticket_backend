@@ -138,6 +138,25 @@ class AdminController {
     }
   }
 
+  // Get all withdrawals
+  async getAllWithdrawals(req, res) {
+    try {
+      const result = await this.adminService.getAllWithdrawals();
+
+      if (result.success) {
+        res.status(200).json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
+
   // Update user status
   async updateUserStatus(req, res) {
     try {

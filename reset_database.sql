@@ -82,7 +82,7 @@ CREATE TABLE withdrawals (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
-  FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (processed_by) REFERENCES User(_id) ON DELETE SET NULL
 );
 
 -- Favorites table
@@ -106,8 +106,7 @@ CREATE TABLE orders (
   status ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+
 );
 
 -- Ticket types table (for event ticket pricing)
@@ -133,12 +132,9 @@ CREATE TABLE tickets (
   ticket_number VARCHAR(50) UNIQUE,
   status ENUM('active', 'used', 'cancelled') DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  FOREIGN KEY (ticket_type_id) REFERENCES ticket_types(id) ON DELETE CASCADE
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
 
 -- Create indexes for better performance
 CREATE INDEX idx_events_vendor_id ON events(vendor_id);

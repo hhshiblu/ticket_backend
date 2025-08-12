@@ -21,7 +21,7 @@ class OrderQueries {
       `;
 
       const orderParams = [
-        orderData.userId || null, // Can be null for guest orders
+        orderData.userId || 1, // Can be null for guest orders
         orderData.eventId,
         orderData.quantity,
         orderData.totalAmount,
@@ -46,7 +46,7 @@ class OrderQueries {
           const ticketNumber = `TKT-${orderId}-${i + 1}`;
           const ticketParams = [
             orderData.eventId,
-            orderData.userId || null,
+            orderData.userId || 1,
             orderId,
             orderData.ticketId,
             ticketNumber,
@@ -79,7 +79,7 @@ class OrderQueries {
           u.email as customer_email
         FROM orders o
         LEFT JOIN events e ON o.event_id = e.id
-        LEFT JOIN users u ON o.user_id = u.id
+        LEFT JOIN user u ON o.user_id = u.id
         WHERE 1=1
       `;
 
@@ -101,13 +101,6 @@ class OrderQueries {
       }
 
       sql += ` ORDER BY o.created_at DESC`;
-
-      // Add pagination
-      if (filters.page && filters.limit) {
-        const offset = (filters.page - 1) * filters.limit;
-        sql += ` LIMIT ? OFFSET ?`;
-        params.push(filters.limit, offset);
-      }
 
       const result = await this.db.query(sql, params);
       return result;
@@ -133,7 +126,7 @@ class OrderQueries {
           tt.price as ticket_price
         FROM orders o
         LEFT JOIN events e ON o.event_id = e.id
-        LEFT JOIN users u ON o.user_id = u.id
+        LEFT JOIN user u ON o.user_id = u.id
         LEFT JOIN tickets t ON o.id = t.order_id
         LEFT JOIN ticket_types tt ON t.ticket_type_id = tt.id
         WHERE o.id = ?
@@ -192,8 +185,6 @@ class OrderQueries {
 
   async getUserOrders(userId, page = 1, limit = 10) {
     try {
-      const offset = (page - 1) * limit;
-
       const sql = `
         SELECT 
           o.*,
@@ -206,10 +197,9 @@ class OrderQueries {
         LEFT JOIN events e ON o.event_id = e.id
         WHERE o.user_id = ?
         ORDER BY o.created_at DESC
-        LIMIT ? OFFSET ?
       `;
 
-      const result = await this.db.query(sql, [userId, limit, offset]);
+      const result = await this.db.query(sql, [1]);
 
       // Parse customer info for each order
       result.forEach((order) => {
@@ -231,21 +221,18 @@ class OrderQueries {
 
   async getEventOrders(eventId, page = 1, limit = 10) {
     try {
-      const offset = (page - 1) * limit;
-
       const sql = `
         SELECT 
           o.*,
           u.name as customer_name,
           u.email as customer_email
         FROM orders o
-        LEFT JOIN users u ON o.user_id = u.id
+        LEFT JOIN user u ON o.user_id = u.id
         WHERE o.event_id = ?
         ORDER BY o.created_at DESC
-        LIMIT ? OFFSET ?
       `;
 
-      const result = await this.db.query(sql, [eventId, limit, offset]);
+      const result = await this.db.query(sql, [eventId]);
 
       // Parse customer info for each order
       result.forEach((order) => {

@@ -10,13 +10,16 @@ router.get("/", userController.getAllUsers.bind(userController));
 // Search users
 router.get("/search", userController.searchUsers.bind(userController));
 
-// Get user statistics
-router.get("/stats", userController.getUserStats.bind(userController));
-
 // Get user orders
 router.get(
   "/:userId/orders",
   userController.getUserOrders.bind(userController)
+);
+
+// Get user stats
+router.get(
+  "/:userId/stats",
+  userController.getUserStats.bind(userController)
 );
 
 // Get user favorites

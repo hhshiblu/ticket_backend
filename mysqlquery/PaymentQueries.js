@@ -1,4 +1,4 @@
-const db = require('../db/database');
+const db = require("../db/database");
 
 class PaymentQueries {
   constructor() {
@@ -14,39 +14,39 @@ class PaymentQueries {
         e.title as event_title,
         v.name as vendor_name
       FROM payments p
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN user u ON p.user_id = u.id
       LEFT JOIN events e ON p.event_id = e.id
       LEFT JOIN vendors v ON e.vendor_id = v.id
       WHERE 1=1
     `;
-    
+
     const params = [];
-    
+
     if (filters.status) {
       sql += ` AND p.status = ?`;
       params.push(filters.status);
     }
-    
+
     if (filters.method) {
       sql += ` AND p.payment_method = ?`;
       params.push(filters.method);
     }
-    
+
     if (filters.date_from) {
       sql += ` AND DATE(p.created_at) >= ?`;
       params.push(filters.date_from);
     }
-    
+
     if (filters.date_to) {
       sql += ` AND DATE(p.created_at) <= ?`;
       params.push(filters.date_to);
     }
-    
+
     sql += ` ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
-    
+
     const offset = (page - 1) * limit;
     params.push(limit, offset);
-    
+
     return await this.db.query(sql, params);
   }
 
@@ -62,12 +62,12 @@ class PaymentQueries {
         v.name as vendor_name,
         v.email as vendor_email
       FROM payments p
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN user u ON p.user_id = u.id
       LEFT JOIN events e ON p.event_id = e.id
       LEFT JOIN vendors v ON e.vendor_id = v.id
       WHERE p.id = ?
     `;
-    
+
     const result = await this.db.query(sql, [id]);
     return result[0];
   }
@@ -79,16 +79,16 @@ class PaymentQueries {
         transaction_id, status, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
-    
+
     const params = [
       paymentData.user_id,
       paymentData.event_id,
       paymentData.amount,
       paymentData.payment_method,
       paymentData.transaction_id,
-      paymentData.status || 'pending'
+      paymentData.status || "pending",
     ];
-    
+
     const result = await this.db.query(sql, params);
     return result.insertId;
   }
@@ -106,28 +106,28 @@ class PaymentQueries {
         u.name as user_name
       FROM payments p
       LEFT JOIN events e ON p.event_id = e.id
-      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN user u ON p.user_id = u.id
       WHERE e.vendor_id = ? AND p.status = 'completed'
     `;
-    
+
     const params = [vendorId];
-    
+
     if (filters.date_from) {
       sql += ` AND DATE(p.created_at) >= ?`;
       params.push(filters.date_from);
     }
-    
+
     if (filters.date_to) {
       sql += ` AND DATE(p.created_at) <= ?`;
       params.push(filters.date_to);
     }
-    
+
     sql += ` ORDER BY p.created_at DESC`;
-    
+
     return await this.db.query(sql, params);
   }
 
-  async getWithdrawalRequests(status = '', page = 1, limit = 10) {
+  async getWithdrawalRequests(status = "", page = 1, limit = 10) {
     let sql = `
       SELECT 
         w.*,
@@ -138,19 +138,19 @@ class PaymentQueries {
       LEFT JOIN vendors v ON w.vendor_id = v.id
       WHERE 1=1
     `;
-    
+
     const params = [];
-    
+
     if (status) {
       sql += ` AND w.status = ?`;
       params.push(status);
     }
-    
+
     sql += ` ORDER BY w.created_at DESC LIMIT ? OFFSET ?`;
-    
+
     const offset = (page - 1) * limit;
     params.push(limit, offset);
-    
+
     return await this.db.query(sql, params);
   }
 
@@ -161,14 +161,14 @@ class PaymentQueries {
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, NOW(), NOW())
     `;
-    
+
     const params = [
       withdrawalData.vendor_id,
       withdrawalData.amount,
       withdrawalData.bank_details,
-      withdrawalData.status || 'pending'
+      withdrawalData.status || "pending",
     ];
-    
+
     const result = await this.db.query(sql, params);
     return result.insertId;
   }
@@ -179,7 +179,7 @@ class PaymentQueries {
       SET status = ?, processed_by = ?, processed_at = NOW(), updated_at = NOW() 
       WHERE id = ?
     `;
-    
+
     return await this.db.query(sql, [status, processedBy, withdrawalId]);
   }
 
@@ -194,7 +194,7 @@ class PaymentQueries {
         SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND status = 'completed' THEN amount ELSE 0 END) as revenue_30_days
       FROM payments
     `;
-    
+
     const result = await this.db.query(sql);
     return result[0];
   }
@@ -210,7 +210,7 @@ class PaymentQueries {
       LEFT JOIN events e ON p.event_id = e.id
       WHERE e.vendor_id = ?
     `;
-    
+
     const result = await this.db.query(sql, [vendorId]);
     return result[0];
   }
@@ -228,7 +228,7 @@ class PaymentQueries {
       ORDER BY p.created_at DESC
       LIMIT ? OFFSET ?
     `;
-    
+
     const offset = (page - 1) * limit;
     return await this.db.query(sql, [userId, limit, offset]);
   }

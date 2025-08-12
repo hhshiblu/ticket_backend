@@ -58,8 +58,9 @@ class VendorQueries {
     const sql = `
       INSERT INTO vendors (
         name, email, phone, address, company_name, 
-        business_type, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        business_type, event_types, experience, description,
+        status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
     const params = [
@@ -69,6 +70,9 @@ class VendorQueries {
       vendorData.address,
       vendorData.company_name,
       vendorData.business_type,
+      JSON.stringify(vendorData.event_types || []),
+      vendorData.experience,
+      vendorData.description,
       vendorData.status || "pending",
     ];
 
@@ -86,6 +90,9 @@ class VendorQueries {
         address = ?,
         company_name = ?,
         business_type = ?,
+        event_types = ?,
+        experience = ?,
+        description = ?,
         status = ?,
         updated_at = NOW()
       WHERE id = ?
@@ -97,6 +104,9 @@ class VendorQueries {
       vendorData.address,
       vendorData.company_name,
       vendorData.business_type,
+      JSON.stringify(vendorData.event_types || []),
+      vendorData.experience,
+      vendorData.description,
       vendorData.status,
       vendorId,
     ];
@@ -206,6 +216,11 @@ class VendorQueries {
       ORDER BY e.event_date DESC
     `;
     return await this.db.query(sql, [vendorId]);
+  }
+
+  async getVendorByEmail(email) {
+    const sql = `SELECT * FROM vendors WHERE email = ?`;
+    return await this.db.query(sql, [email]);
   }
 }
 

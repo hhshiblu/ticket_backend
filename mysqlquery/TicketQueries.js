@@ -77,9 +77,54 @@ class TicketQueries {
   }
 
   async getTicketById(id) {
-    const sql = `SELECT * FROM ticket_types WHERE id = ?`;
+    const sql = `
+      SELECT 
+        t.*,
+        e.title as event_title,
+        e.event_date,
+        e.start_time,
+        e.location,
+        e.image_url,
+        tt.type as ticket_type,
+        tt.price,
+        o.total_amount,
+        o.status as order_status
+      FROM tickets t
+      LEFT JOIN events e ON t.event_id = e.id
+      LEFT JOIN ticket_types tt ON t.ticket_type_id = tt.id
+      LEFT JOIN orders o ON t.order_id = o.id
+      WHERE t.id = ?
+    `;
     const result = await this.db.query(sql, [id]);
     return result[0];
+  }
+
+  async getUserTickets(userId) {
+    const sql = `
+      SELECT 
+        t.id,
+        t.ticket_number,
+        t.status,
+        t.created_at as purchase_date,
+        e.title as event_title,
+        e.event_date,
+        e.start_time,
+        e.location,
+        e.image_url,
+        tt.type as ticket_type,
+        tt.price,
+        o.total_amount,
+        o.status as order_status,
+        o.quantity
+      FROM tickets t
+      LEFT JOIN events e ON t.event_id = e.id
+      LEFT JOIN ticket_types tt ON t.ticket_type_id = tt.id
+      LEFT JOIN orders o ON t.order_id = o.id
+      WHERE t.user_id = ?
+      ORDER BY t.created_at DESC
+    `;
+
+    return await this.db.query(sql, [1]);
   }
 
   async updateTicketQuantity(id, quantity) {
@@ -110,7 +155,7 @@ class TicketQueries {
       FROM tickets t
       JOIN events e ON t.event_id = e.id
       JOIN ticket_types tt ON t.ticket_type_id = tt.id
-      JOIN users u ON t.user_id = u.id
+      JOIN User u ON t.user_id = u._id
       JOIN orders o ON t.order_id = o.id
       WHERE e.vendor_id = ?
       ORDER BY t.created_at DESC

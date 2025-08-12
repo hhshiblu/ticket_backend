@@ -3,32 +3,8 @@
 CREATE DATABASE IF NOT EXISTS ticket;
 USE ticket;
 
--- Users table
-CREATE TABLE users (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  phone VARCHAR(20),
-  password VARCHAR(255),
-  address TEXT,
-  status ENUM('active', 'inactive') DEFAULT 'active',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
 
--- Vendors table
-CREATE TABLE vendors (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  phone VARCHAR(20),
-  address TEXT,
-  company_name VARCHAR(255),
-  business_type VARCHAR(100),
-  status ENUM('pending', 'approved', 'suspended') DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+
 
 -- Events table
 CREATE TABLE events (
@@ -152,14 +128,8 @@ CREATE INDEX idx_tickets_event_id ON tickets(event_id);
 CREATE INDEX idx_tickets_user_id ON tickets(user_id);
 
 -- Insert sample data
-INSERT INTO users (name, email, phone, password, address) VALUES
-('John Doe', 'john@example.com', '+1234567890', 'hashed_password', '123 Main St, City'),
-('Jane Smith', 'jane@example.com', '+0987654321', 'hashed_password', '456 Oak Ave, Town');
 
-INSERT INTO vendors (name, email, phone, address, company_name, business_type, status) VALUES
-('Event Pro', 'contact@eventpro.com', '+1122334455', '789 Business Blvd, City', 'Event Pro LLC', 'Event Management', 'approved'),
-('Party Masters', 'info@partymasters.com', '+1555666777', '321 Entertainment St, Town', 'Party Masters Inc', 'Entertainment', 'pending'),
-('Test Vendor', 'test@vendor.com', '+1111111111', 'Test Address', 'Test Company', 'Event Management', 'approved');
+
 
 INSERT INTO events (title, description, category, location, event_date, start_time, end_time, price, capacity, vendor_id, status) VALUES
 ('Summer Music Festival', 'A fantastic summer music festival with live bands', 'Music', 'Central Park, City', '2024-07-15', '18:00:00', '23:00:00', 50.00, 1000, 1, 'active'),

@@ -1,4 +1,4 @@
-const db = require('../db/database');
+const db = require("../db/database");
 
 class UserQueries {
   constructor() {
@@ -11,29 +11,26 @@ class UserQueries {
         u.*,
         COUNT(o.id) as order_count,
         SUM(o.total_amount) as total_spent
-      FROM users u
+      FROM user u
       LEFT JOIN orders o ON u.id = o.user_id
       WHERE 1=1
     `;
-    
+
     const params = [];
-    
+
     if (filters.status) {
       sql += ` AND u.status = ?`;
       params.push(filters.status);
     }
-    
+
     if (filters.search) {
       sql += ` AND (u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)`;
       const searchPattern = `%${filters.search}%`;
       params.push(searchPattern, searchPattern, searchPattern);
     }
-    
-    sql += ` GROUP BY u.id ORDER BY u.created_at DESC LIMIT ? OFFSET ?`;
-    
-    const offset = (page - 1) * limit;
-    params.push(limit, offset);
-    
+
+    sql += ` GROUP BY u.id ORDER BY u.created_at DESC`;
+
     return await this.db.query(sql, params);
   }
 
@@ -44,65 +41,86 @@ class UserQueries {
         COUNT(o.id) as total_orders,
         SUM(o.total_amount) as total_spent,
         COUNT(f.id) as favorite_count
-      FROM users u
+      FROM user u
       LEFT JOIN orders o ON u.id = o.user_id
       LEFT JOIN favorites f ON u.id = f.user_id
       WHERE u.id = ?
       GROUP BY u.id
     `;
-    
+
     const result = await this.db.query(sql, [id]);
     return result[0];
   }
 
+  async getUserStats() {
+    const sql = `
+    SELECT 
+      COUNT(DISTINCT t.id) AS total_tickets,
+      COUNT(DISTINCT o.id) AS total_orders,
+      SUM(DISTINCT o.id * o.total_amount / o.id) AS total_spent,
+      COUNT(DISTINCT CASE WHEN t.status = 'active' THEN t.id END) AS active_tickets,
+      COUNT(DISTINCT CASE WHEN t.status = 'used' THEN t.id END) AS used_tickets,
+      COUNT(DISTINCT CASE WHEN o.status = 'confirmed' THEN o.id END) AS confirmed_orders,
+      COUNT(DISTINCT CASE WHEN o.status = 'pending' THEN o.id END) AS pending_orders
+    FROM tickets t
+    LEFT JOIN orders o ON o.user_id = t.user_id
+    WHERE t.user_id = ?
+  `;
+
+    const [result] = await this.db.query(sql, [1]);
+    console.log(result);
+
+    return result;
+  }
+
   async createUser(userData) {
     const sql = `
-      INSERT INTO users (
+      INSERT INTO user (
         name, email, phone, password, address, 
-        status, created_at, updated_at
+        status, createdAt, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
-    
+
     const params = [
       userData.name,
       userData.email,
       userData.phone,
       userData.password,
       userData.address,
-      userData.status || 'active'
+      userData.status || "active",
     ];
-    
+
     const result = await this.db.query(sql, params);
     return result.insertId;
   }
 
   async updateUser(id, userData) {
     const sql = `
-      UPDATE users SET
+      UPDATE user SET
         name = ?, email = ?, phone = ?, address = ?,
         status = ?, updated_at = NOW()
       WHERE id = ?
     `;
-    
+
     const params = [
       userData.name,
       userData.email,
       userData.phone,
       userData.address,
       userData.status,
-      id
+      id,
     ];
-    
+
     return await this.db.query(sql, params);
   }
 
   async updateUserStatus(id, status) {
-    const sql = `UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?`;
+    const sql = `UPDATE user SET status = ?, updated_at = NOW() WHERE id = ?`;
     return await this.db.query(sql, [status, id]);
   }
 
   async deleteUser(id) {
-    const sql = `DELETE FROM users WHERE id = ?`;
+    const sql = `DELETE FROM user WHERE id = ?`;
     return await this.db.query(sql, [id]);
   }
 
@@ -119,9 +137,9 @@ class UserQueries {
       ORDER BY o.created_at DESC
       LIMIT ? OFFSET ?
     `;
-    
+
     const offset = (page - 1) * limit;
-    return await this.db.query(sql, [userId, limit, offset]);
+    return await this.db.query(sql, [1, limit, offset]);
   }
 
   async getUserFavorites(userId) {
@@ -138,8 +156,8 @@ class UserQueries {
       WHERE f.user_id = ?
       ORDER BY f.created_at DESC
     `;
-    
-    return await this.db.query(sql, [userId]);
+
+    return await this.db.query(sql, [1]);
   }
 
   async addToFavorites(userId, eventId) {
@@ -147,43 +165,47 @@ class UserQueries {
       INSERT INTO favorites (user_id, event_id, created_at)
       VALUES (?, ?, NOW())
     `;
-    
-    return await this.db.query(sql, [userId, eventId]);
+
+    return await this.db.query(sql, [1, eventId]);
   }
 
   async removeFromFavorites(userId, eventId) {
     const sql = `DELETE FROM favorites WHERE user_id = ? AND event_id = ?`;
-    return await this.db.query(sql, [userId, eventId]);
+    return await this.db.query(sql, [1, eventId]);
   }
 
-  async getUserStats() {
-    const sql = `
-      SELECT 
-        COUNT(*) as total_users,
-        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_users,
-        COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_users,
-        COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as new_users_30_days
-      FROM users
-    `;
-    
-    const result = await this.db.query(sql);
-    return result[0];
-  }
+  // async getUserStats() {
+  //   const sql = `
+  //     SELECT
+  //       COUNT(*) as total_users,
+  //       COUNT(CASE WHEN status = 'active' THEN 1 END) as active_users,
+  //       COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_users,
+  //       COUNT(CASE WHEN createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as new_users_30_days
+  //     FROM User
+  //   `;
+
+  //   const result = await this.db.query(sql);
+  //   return result[0];
+  // }
 
   async searchUsers(searchTerm) {
     const sql = `
       SELECT 
         u.*,
         COUNT(o.id) as order_count
-      FROM users u
+      FROM user u
       LEFT JOIN orders o ON u.id = o.user_id
       WHERE u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?
-      GROUP BY u.id
-      ORDER BY u.created_at DESC
+      GROUP BY u._id
+      ORDER BY u.createdAt DESC
     `;
-    
+
     const searchPattern = `%${searchTerm}%`;
-    return await this.db.query(sql, [searchPattern, searchPattern, searchPattern]);
+    return await this.db.query(sql, [
+      searchPattern,
+      searchPattern,
+      searchPattern,
+    ]);
   }
 }
 

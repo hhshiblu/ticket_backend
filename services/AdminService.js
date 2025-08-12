@@ -85,7 +85,10 @@ class AdminService {
         };
       }
 
-      const updated = await this.adminQueries.updateEventStatus(eventId, status);
+      const updated = await this.adminQueries.updateEventStatus(
+        eventId,
+        status
+      );
 
       if (updated) {
         return {
@@ -157,6 +160,23 @@ class AdminService {
     }
   }
 
+  // Get all withdrawals
+  async getAllWithdrawals() {
+    try {
+      const result = await this.adminQueries.getAllWithdrawals();
+      return {
+        success: true,
+        data: result,
+        message: "Withdrawals retrieved successfully",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
   // Update user status
   async updateUserStatus(userId, status) {
     try {
@@ -192,12 +212,12 @@ class AdminService {
   // Update vendor status
   async updateVendorStatus(vendorId, status) {
     try {
-      const validStatuses = ["active", "inactive", "suspended", "pending"];
+      const validStatuses = ["pending", "approved", "suspended"];
       if (!validStatuses.includes(status)) {
         return {
           success: false,
           message:
-            "Invalid status. Must be one of: active, inactive, suspended, pending",
+            "Invalid status. Must be one of: pending, approved, suspended",
         };
       }
 

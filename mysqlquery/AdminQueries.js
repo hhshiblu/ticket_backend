@@ -22,14 +22,14 @@ class AdminQueries {
           SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_users,
           SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive_users,
           SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) as suspended_users
-         FROM users`
+         FROM User`
       );
 
       // Get vendor statistics with breakdown
       const vendorsStatsResult = await this.db.query(
         `SELECT 
           COUNT(*) as total_vendors,
-          SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_vendors,
+          SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as active_vendors,
           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_vendors,
           SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) as suspended_vendors
          FROM vendors`
@@ -58,7 +58,7 @@ class AdminQueries {
       const recentOrdersResult = await this.db.query(
         `SELECT o.*, u.name as buyer_name, e.title as event_title 
          FROM orders o 
-         LEFT JOIN users u ON o.user_id = u.id 
+         LEFT JOIN User u ON o.user_id = u._id 
          LEFT JOIN events e ON o.event_id = e.id 
          ORDER BY o.created_at DESC 
          LIMIT 5`
@@ -103,10 +103,10 @@ class AdminQueries {
         `SELECT u.*, 
                 COUNT(DISTINCT o.id) as total_orders,
                 COALESCE(SUM(o.total_amount), 0) as total_spent
-         FROM users u 
-         LEFT JOIN orders o ON u.id = o.user_id 
-         GROUP BY u.id 
-         ORDER BY u.created_at DESC`
+         FROM User u 
+         LEFT JOIN orders o ON u._id = o.user_id 
+         GROUP BY u._id 
+         ORDER BY u.createdAt DESC`
       );
 
       return {
@@ -190,7 +190,7 @@ class AdminQueries {
                 tt.price as ticket_price
          FROM tickets t 
          LEFT JOIN events e ON t.event_id = e.id 
-         LEFT JOIN users u ON t.user_id = u.id 
+         LEFT JOIN User u ON t.user_id = u._id 
          LEFT JOIN vendors v ON e.vendor_id = v.id 
          LEFT JOIN ticket_types tt ON t.ticket_type_id = tt.id 
          ORDER BY t.created_at DESC`
@@ -290,7 +290,7 @@ class AdminQueries {
           e.title as event_title,
           v.name as vendor_name
          FROM orders o 
-         LEFT JOIN users u ON o.user_id = u.id 
+         LEFT JOIN User u ON o.user_id = u._id 
          LEFT JOIN events e ON o.event_id = e.id 
          LEFT JOIN vendors v ON e.vendor_id = v.id 
          UNION ALL
@@ -319,12 +319,36 @@ class AdminQueries {
     }
   }
 
+  // Get all withdrawals
+  async getAllWithdrawals() {
+    try {
+      await this.ensureConnection();
+
+      const withdrawalsResult = await this.db.query(
+        `SELECT 
+          w.*,
+          v.name as vendor_name,
+          v.email as vendor_email
+         FROM withdrawals w 
+         LEFT JOIN vendors v ON w.vendor_id = v.id 
+         ORDER BY w.created_at DESC`
+      );
+
+      return {
+        withdrawals: withdrawalsResult,
+        total: withdrawalsResult.length,
+      };
+    } catch (error) {
+      throw new Error(`Error getting withdrawals: ${error.message}`);
+    }
+  }
+
   // Update user status
   async updateUserStatus(userId, status) {
     try {
       await this.ensureConnection();
       const result = await this.db.query(
-        "UPDATE users SET status = ? WHERE id = ?",
+        "UPDATE User SET status = ? WHERE _id = ?",
         [status, userId]
       );
 
@@ -482,7 +506,7 @@ class AdminQueries {
 
       // Get total users
       const usersResult = await this.db.query(
-        "SELECT COUNT(*) as total_users FROM users"
+        "SELECT COUNT(*) as total_users FROM User"
       );
 
       // Get active users (users with status = 'active')
